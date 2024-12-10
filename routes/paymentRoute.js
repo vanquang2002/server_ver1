@@ -19,7 +19,7 @@ const payos = new PayOS(
 
 router.post('/create-payment-link', async (req, res) => {
     const { amount, bookingId } = req.body;
-    const YOUR_DOMAIN = process.env.REACT_URL;
+    const YOUR_DOMAIN = 'https://client-customers-ver1.vercel.app';
 
     try {
 
@@ -39,9 +39,9 @@ router.post('/create-payment-link', async (req, res) => {
 
         // Set a timeout of 5 minutes to delete the booking if payment is not processed
         setTimeout(async () => {
-            const response = await axios.get(`http://localhost:9999/bookings/${bookingId}`);
+            const response = await axios.get(`https://server-ver1.onrender.com/bookings/${bookingId}`);
             if (response.data.payment === 0 || response.data.payment === undefined) {
-                await axios.delete(`http://localhost:9999/bookings/all/${bookingIddel}`);
+                await axios.delete(`https://server-ver1.onrender.com/bookings/all/${bookingIddel}`);
                 console.log(`Booking ${bookingId} deleted due to timeout.`);
             }
             else {
