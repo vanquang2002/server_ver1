@@ -43,7 +43,7 @@ app.use(json());
 // Lấy danh sách các URL frontend từ biến môi trường
 const allowedOrigins = process.env.REACT_URL
   ? process.env.REACT_URL.split(",")
-  : ["https://client-admin-ver1.vercel.app", "https://client-customers-ver1.vercel.app"];
+  : ["https://client-customers-ver1.vercel.app", "https://client-admin-ver1.vercel.app"];
 
 // Middleware CORS
 app.use(
