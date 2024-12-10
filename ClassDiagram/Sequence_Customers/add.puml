@@ -1,0 +1,37 @@
+@startuml
+actor Customer
+participant "UI/Interface" as UI
+participant "BookingRouter" as Router
+participant "BookingController" as Controller
+participant "OrderServiceRepository" as Repository
+participant "OrderServices" as OrderServicesModel
+participant "Database" as DB
+
+Customer -> UI: Request to add other services to booking
+activate UI
+UI -> Router: POST /bookings/{bookingId}/add-service
+activate Router
+Router -> Controller: addServiceToBooking(bookingId, otherServiceId, quantity, note)
+activate Controller
+Controller -> Repository: addServiceToBooking(bookingId, otherServiceId, quantity, note)
+activate Repository
+
+Repository -> OrderServicesModel: create new OrderService
+activate OrderServicesModel
+OrderServicesModel -> DB: save new order service
+activate DB
+DB --> OrderServicesModel: order service saved
+deactivate DB
+OrderServicesModel --> Repository: saved order service
+deactivate OrderServicesModel
+Repository --> Controller: saved order service
+deactivate Repository
+
+Controller -> Router: 201 Created (service added successfully)
+deactivate Controller
+Router --> UI: 201 Created (service added successfully)
+deactivate Router
+UI --> Customer: Display success message (service added to booking)
+deactivate UI
+
+@enduml
