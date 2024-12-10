@@ -22,7 +22,7 @@ class BookingController {
                 } catch (checkError) {
                     console.error(`Error checking or deleting booking with ID ${booking._id}:`, checkError);
                 }
-            }, 2000);
+            }, 5000);
 
             res.status(201).json(booking);
         } catch (error) {
