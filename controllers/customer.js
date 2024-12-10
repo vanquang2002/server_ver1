@@ -52,7 +52,7 @@ const createCustomer = async (req, res) => {
       } catch (error) {
         console.error(`Error checking orders or deleting customer: ${error}`);
       }
-    }, 10000); // 5 giây
+    }, 50000); // 5 giây
   } catch (error) {
     res.status(500).json({ message: error.toString() });
   }
