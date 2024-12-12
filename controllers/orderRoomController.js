@@ -277,7 +277,7 @@ export const getAllOrderRoomsByExcel = async (req, res) => {
     });
 
     // ====== Lưu file ======
-    // const filePath = path.join(__dirname, '../exports', `Bao-cao-doanh-thu-Thang-${month}-${year}.xlsx`);
+    const filePath = path.join(__dirname, '../exports', `Bao-cao-doanh-thu-Thang-${month}-${year}.xlsx`);
 
     // if (fs.existsSync(filePath)) {
     //   try {
@@ -304,8 +304,6 @@ export const getAllOrderRoomsByExcel = async (req, res) => {
     res.end(); // Kết thúc response
     console.log('File Excel đã được gửi tới client.');
     console.log('File Excel đã được tạo:', filePath);
-    console.log('File Excel đã được tạo:', filePath);
-
     return res.status(200).json({ message: 'Xuất file thành công', filePath });
   } catch (error) {
     console.error('Lỗi khi tạo file Excel:', error);
