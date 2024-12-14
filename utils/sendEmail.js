@@ -1,7 +1,6 @@
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 import { format } from 'date-fns';
-import { BASE_URL } from "./config.js";
 import axios from 'axios';
 
 dotenv.config();
