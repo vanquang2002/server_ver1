@@ -2,7 +2,7 @@ import express from 'express'
 const router = express.Router();
 import Booking from './../models/booking.js';
 import OrderRooms from './../models/orderRoom.js';
-import { sendOtpEmail, verifyOtp } from '../utils/otpVerification.js.js'; // Import OTP functions
+import { sendOtpEmail, verifyOtp } from '../utils/otpVerification.js'; // Import OTP functions
 import sendConfirmationEmail from '../utils/sendEmail.js';
 
 router.put('/confirm-and-send-email/:id', async (req, res) => {
