@@ -265,11 +265,14 @@ export const getAllOrderRoomsByExcel = async (req, res) => {
 
       const summaryRow = summarySheet.addRow([
         index + 1,
-        `${day}/${month}/${year}`,
+        `${day}`,
         dayRooms,
-        dayDebt.toLocaleString(),
-        dayPaid.toLocaleString(),
-        dayRevenue.toLocaleString(),
+        // dayDebt.toLocaleString(),
+        // dayPaid.toLocaleString(),
+        // dayRevenue.toLocaleString(),
+        '',
+        '',
+        ''
       ]);
       applyBorderToRow(summaryRow);
     });
