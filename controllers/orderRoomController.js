@@ -180,7 +180,9 @@ export const getAllOrderRoomsByExcel = async (req, res) => {
         const booking = order.bookingId;
 
         const roomFee = booking?.price || 0;
+        console.log("roomFee: " + roomFee);
         const quantity = order?.quantity || 1; // Giả sử mỗi phòng là 1 đơn vị
+        console.log("quantity: " + quantity);
         const itemTotal = roomFee * quantity;
 
         totalRoomFee += itemTotal;
