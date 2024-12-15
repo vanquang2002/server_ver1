@@ -206,7 +206,8 @@ export const getAllOrderRoomsByExcel = async (req, res) => {
         const roomCategory = room.roomCategoryId;
         const booking = room.bookingId;
 
-        const roomFee = roomCategory?.price || 0;
+        //const roomFee = roomCategory?.price || 0;
+        const roomFee = booking?.price || 0;
         const quantity = 1; // Giả sử mỗi phòng là 1 đơn vị
         const itemTotal = roomFee * quantity;
 
