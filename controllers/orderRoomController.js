@@ -206,6 +206,7 @@ export const getAllOrderRoomsByExcel = async (req, res) => {
         '',
         '',
         '',
+        '',
         totalRoomFee.toLocaleString(),
         '',
         '',
@@ -218,7 +219,7 @@ export const getAllOrderRoomsByExcel = async (req, res) => {
       // Dòng "Tổng doanh thu"
       const revenueRow = sheet.addRow([
         'Tổng doanh thu:',
-        { formula: 'SUM(E:E, F:F, G:G)' },
+        { formula: 'SUM(F:F, G:G, H:H)' },
       ]);
       revenueRow.font = { bold: true, size: 12 };
       applyBorderToRow(revenueRow);
