@@ -149,7 +149,7 @@ export const getAllOrderRoomsByExcel = async (req, res) => {
 
     // ====== Tạo sheet chi tiết từng ngày ======
     Object.keys(groupedByDay).forEach((formattedDate) => {
-      const sheet = workbook.addWorksheet(`Ngày ${day}.${month}`);
+      //const sheet = workbook.addWorksheet(`Ngày ${day}.${month}`);
       const sheet = workbook.addWorksheet(`Ngày ${formattedDate}`);
       console.log("formattedDate" + formattedDate);
 
