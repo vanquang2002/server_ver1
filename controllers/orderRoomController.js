@@ -103,8 +103,17 @@ export const getAllOrderRoomsByExcel = async (req, res) => {
 
     // ====== Nhóm dữ liệu theo ngày ======
     const groupedByDay = {};
-
+    // Loại bỏ bản ghi trùng lặp dựa trên `_id`
+    const uniqueOrders = [];
+    const seenOrderIds = new Set();
     orderRooms.forEach((order) => {
+      if (!seenOrderIds.has(order._id.toString())) {
+        uniqueOrders.push(order);
+        seenOrderIds.add(order._id.toString());
+      }
+    });
+
+    uniqueOrders.forEach((order) => {
       const booking = order.bookingId;
       if (booking && booking.updatedAt) {
         // Lấy ngày từ updatedAt và chuyển thành dd/MM/yyyy
@@ -113,7 +122,7 @@ export const getAllOrderRoomsByExcel = async (req, res) => {
           .slice(0, 10) // yyyy-MM-dd
           .split('-')
           .reverse()
-          .join('/'); // Chuyển thành dd/MM/yyyy
+          .join('-'); // Chuyển thành dd/MM/yyyy
     
         if (!groupedByDay[formattedDate]) {
           groupedByDay[formattedDate] = [];
@@ -121,6 +130,10 @@ export const getAllOrderRoomsByExcel = async (req, res) => {
         groupedByDay[formattedDate].push(order);
       }
     });
+    // Debug: Kiểm tra số lượng đơn hàng trong mỗi ngày
+    console.log('Số lượng đơn hàng trong mỗi ngày:');
+    Object.keys(groupedByDay).forEach((date) => {
+      console.log(`Ngày ${date}:`, groupedByDay[date].length, 'đơn hàng');
 
     // ====== Hàm áp dụng đường viền ======
     const applyBorderToRow = (row) => {
@@ -135,8 +148,10 @@ export const getAllOrderRoomsByExcel = async (req, res) => {
     };
 
     // ====== Tạo sheet chi tiết từng ngày ======
-    for (let day = 1; day <= daysInMonth; day++) {
+    Object.keys(groupedByDay).forEach((formattedDate) => {
       const sheet = workbook.addWorksheet(`Ngày ${day}.${month}`);
+      const sheet = workbook.addWorksheet(`Ngày ${formattedDate}`);
+      console.log("formattedDate" + formattedDate);
 
       // ====== Tiêu đề ======
       sheet.mergeCells('A1:I1');
@@ -145,7 +160,7 @@ export const getAllOrderRoomsByExcel = async (req, res) => {
       sheet.getCell('A1').font = { bold: true, size: 16 };
 
       sheet.mergeCells('A2:I2');
-      sheet.getCell('A2').value = `NGÀY ${day}/${month}/${year}`;
+      sheet.getCell('A2').value = `NGÀY ${formattedDate}`;
       sheet.getCell('A2').alignment = { horizontal: 'center', vertical: 'middle' };
       sheet.getCell('A2').font = { bold: true, size: 12 };
 
@@ -169,17 +184,17 @@ export const getAllOrderRoomsByExcel = async (req, res) => {
       applyBorderToRow(headerRow);
 
       // ====== Dữ liệu ======
-      const dayData = groupedByDay[day] || [];
+      const dayData = groupedByDay[formattedDate];
       let totalRoomFee = 0;
       let totalQuantity = 0;
       let totalPrice = 0;
       let totalQuantityString = 0;
 
       dayData.forEach((order, index) => {
-        const roomCategory = order.roomCategoryId;
-        const booking = order.bookingId;
+        const roomCategory = order.roomCateId;
+        const roomCategoryPrice = order.roomCateId?.price;
 
-        const roomFee = booking?.price || 0;
+        cconst roomFee = roomCategoryPrice || 0;
         console.log("roomFee: " + roomFee);
         const quantity = order?.quantity || 1; // Giả sử mỗi phòng là 1 đơn vị
         console.log("quantity: " + quantity);
