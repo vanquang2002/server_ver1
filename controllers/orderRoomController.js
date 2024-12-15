@@ -111,22 +111,48 @@ export const getAllOrderRoomsByExcel = async (req, res) => {
       }
     });
 
-    uniqueOrders.forEach((order) => {
-      const booking = order.bookingId;
-      if (booking && booking.updatedAt) {
-        const formattedDate = new Date(booking.updatedAt)
-          .toISOString()
-          .slice(0, 10)
-          .split('-')
-          .reverse()
-          .join('-'); // Chuyển thành dd/MM/yyyy
+    // uniqueOrders.forEach((order) => {
+    //   const booking = order.bookingId;
+    //   if (booking && booking.updatedAt) {
+    //     const formattedDate = new Date(booking.updatedAt)
+    //       .toISOString()
+    //       .slice(0, 10)
+    //       .split('-')
+    //       .reverse()
+    //       .join('-'); // Chuyển thành dd/MM/yyyy
 
-        if (!groupedByDay[formattedDate]) {
-          groupedByDay[formattedDate] = [];
-        }
-        groupedByDay[formattedDate].push(order);
+    //     if (!groupedByDay[formattedDate]) {
+    //       groupedByDay[formattedDate] = [];
+    //     }
+    //     groupedByDay[formattedDate].push(order);
+    //   }
+    // });
+
+    uniqueOrders.forEach((order) => {
+  const booking = order.bookingId;
+  if (booking && booking.updatedAt) {
+    const updatedDate = new Date(booking.updatedAt);
+
+    // Lấy tháng và năm hiện tại
+    const currentMonth = new Date().getMonth(); // Tháng hiện tại (0-11)
+    const currentYear = new Date().getFullYear(); // Năm hiện tại
+
+    // Kiểm tra nếu tháng và năm khớp
+    if (updatedDate.getMonth() === currentMonth && updatedDate.getFullYear() === currentYear) {
+      const formattedDate = updatedDate
+        .toISOString()
+        .slice(0, 10)
+        .split('-')
+        .reverse()
+        .join('-'); // Chuyển thành dd-MM-yyyy
+
+      if (!groupedByDay[formattedDate]) {
+        groupedByDay[formattedDate] = [];
       }
-    });
+      groupedByDay[formattedDate].push(order);
+    }
+  }
+});
 
     const applyBorderToRow = (row) => {
       row.eachCell({ includeEmpty: true }, (cell) => {
