@@ -119,17 +119,35 @@ export const getAllOrderRoomsByExcel = async (req, res) => {
     const workbook = new ExcelJS.Workbook();
 
     // ====== Nhóm dữ liệu theo ngày ======
-    const groupedByDay = {};
-    rooms.forEach((room) => {
-      const booking = room.bookingId;
-      if (booking && booking.checkin) {
-        const orderDate = new Date(booking.checkin);
-        const day = orderDate.getDate();
+    // const groupedByDay = {};
+    // rooms.forEach((room) => {
+    //   const booking = room.bookingId;
+    //   if (booking && booking.checkin) {
+    //     const orderDate = new Date(booking.checkin);
+    //     const day = orderDate.getDate();
 
-        if (!groupedByDay[day]) groupedByDay[day] = [];
-        groupedByDay[day].push(room);
-      }
-    });
+    //     if (!groupedByDay[day]) groupedByDay[day] = [];
+    //     groupedByDay[day].push(room);
+    //   }
+    // });
+
+    rooms.forEach((room) => {
+  const booking = room.bookingId;
+  if (booking && booking.updatedAt) {
+    // Lấy ngày từ updatedAt và chuyển thành dd/MM/yyyy
+    const formattedDate = new Date(booking.updatedAt)
+      .toISOString()
+      .slice(0, 10) // yyyy-MM-dd
+      .split('-')
+      .reverse()
+      .join('/'); // Chuyển thành dd/MM/yyyy
+
+    if (!groupedByDay[formattedDate]) {
+      groupedByDay[formattedDate] = [];
+    }
+    groupedByDay[formattedDate].push(room);
+  }
+});
 
     // ====== Hàm áp dụng đường viền ======
     const applyBorderToRow = (row) => {
