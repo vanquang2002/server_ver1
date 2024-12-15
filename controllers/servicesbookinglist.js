@@ -117,13 +117,24 @@ const getAllServiceBookings = async (req, res) => {
       },
     ]);
 
+    // Step 2: Remove duplicates based on `_id`
+    const uniqueServices = [];
+    const seenIds = new Set();
+
+    for (const service of orderServices) {
+      if (!seenIds.has(service._id.toString())) {
+        seenIds.add(service._id.toString());
+        uniqueServices.push(service);
+      }
+    }
+
     // If no service bookings are found
-    if (!orderServices || orderServices.length === 0) {
+    if (!uniqueServices.length) {
       return res.status(404).json({ message: "No service bookings found." });
     }
 
-    // Return the formatted bookings list
-    res.status(200).json(orderServices);
+    // Step 3: Return the unique service bookings
+    res.status(200).json(uniqueServices);
   } catch (error) {
     console.error("Error fetching all service bookings:", error);
     res.status(500).json({ message: "Internal server error." });
