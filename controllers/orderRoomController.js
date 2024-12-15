@@ -85,28 +85,28 @@ export const getAllOrderRoomsByExcel = async (req, res) => {
   try {
     console.log('Bắt đầu xuất file doanh thu');
     // Lấy dữ liệu từ DB
-    // const rooms = await Room.find()
-    //   .populate('roomCategoryId') // Lấy thông tin loại phòng (RoomCategories)
-    //   .populate('bookingId'); // Lấy thông tin booking (Bookings)
+    const rooms = await Room.find()
+      .populate('roomCategoryId') // Lấy thông tin loại phòng (RoomCategories)
+      .populate('bookingId'); // Lấy thông tin booking (Bookings)
 
-    // Lấy các bộ lọc từ query params
-    const { locationId, month, year, status } = req.query;
+    // // Lấy các bộ lọc từ query params
+    // const { locationId, month, year, status } = req.query;
 
-    // Tạo bộ lọc
-    const filter = {};
-    if (locationId) filter['roomCategoryId.locationId'] = locationId;
-    if (month && year) {
-      filter['bookingId.updatedAt'] = {
-        $gte: new Date(year, month - 1, 1),
-        $lte: new Date(year, month, 0),
-      };
-    }
-    if (status) filter['bookingId.status'] = status;
+    // // Tạo bộ lọc
+    // const filter = {};
+    // if (locationId) filter['roomCategoryId.locationId'] = locationId;
+    // if (month && year) {
+    //   filter['bookingId.updatedAt'] = {
+    //     $gte: new Date(year, month - 1, 1),
+    //     $lte: new Date(year, month, 0),
+    //   };
+    // }
+    // if (status) filter['bookingId.status'] = status;
 
-    // Lấy dữ liệu từ DB
-    const rooms = await Room.find(filter)
-      .populate('roomCategoryId') // Lấy thông tin loại phòng
-      .populate('bookingId'); // Lấy thông tin booking
+    // // Lấy dữ liệu từ DB
+    // const rooms = await Room.find(filter)
+    //   .populate('roomCategoryId') // Lấy thông tin loại phòng
+    //   .populate('bookingId'); // Lấy thông tin booking
 
     if (!rooms || rooms.length === 0) {
       return res.status(404).json({ message: 'Không tìm thấy dữ liệu' });
