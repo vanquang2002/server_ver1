@@ -4,6 +4,7 @@ import RoomRepository from '../repositories/room.js';
 import Customers from '../models/customer.js';
 import Booking from '../models/booking.js';
 import Room from '../models/room.js';
+import OrderRoom from '../models/orderRoom.js';
 import xlsx from 'xlsx';
 import fs from 'fs';
 import path from 'path';
@@ -85,30 +86,12 @@ export const getAllOrderRoomsByExcel = async (req, res) => {
   try {
     console.log('Bắt đầu xuất file doanh thu');
     // Lấy dữ liệu từ DB
-    const rooms = await Room.find()
-      .populate('roomCategoryId') // Lấy thông tin loại phòng (RoomCategories)
-      .populate('bookingId'); // Lấy thông tin booking (Bookings)
+    const orderRooms = await OrderRoom.find()
+      .populate('roomCateId')   // Thông tin loại phòng
+      .populate('customerId')   // Thông tin khách hàng
+      .populate('bookingId');   // Thông tin booking
 
-    // // Lấy các bộ lọc từ query params
-    // const { locationId, month, year, status } = req.query;
-
-    // // Tạo bộ lọc
-    // const filter = {};
-    // if (locationId) filter['roomCategoryId.locationId'] = locationId;
-    // if (month && year) {
-    //   filter['bookingId.updatedAt'] = {
-    //     $gte: new Date(year, month - 1, 1),
-    //     $lte: new Date(year, month, 0),
-    //   };
-    // }
-    // if (status) filter['bookingId.status'] = status;
-
-    // // Lấy dữ liệu từ DB
-    // const rooms = await Room.find(filter)
-    //   .populate('roomCategoryId') // Lấy thông tin loại phòng
-    //   .populate('bookingId'); // Lấy thông tin booking
-
-    if (!rooms || rooms.length === 0) {
+    if (!orderRooms || orderRooms.length === 0) {
       return res.status(404).json({ message: 'Không tìm thấy dữ liệu' });
     }
 
@@ -119,35 +102,25 @@ export const getAllOrderRoomsByExcel = async (req, res) => {
     const workbook = new ExcelJS.Workbook();
 
     // ====== Nhóm dữ liệu theo ngày ======
-    // const groupedByDay = {};
-    // rooms.forEach((room) => {
-    //   const booking = room.bookingId;
-    //   if (booking && booking.checkin) {
-    //     const orderDate = new Date(booking.checkin);
-    //     const day = orderDate.getDate();
+    const groupedByDay = {};
 
-    //     if (!groupedByDay[day]) groupedByDay[day] = [];
-    //     groupedByDay[day].push(room);
-    //   }
-    // });
-
-    rooms.forEach((room) => {
-  const booking = room.bookingId;
-  if (booking && booking.updatedAt) {
-    // Lấy ngày từ updatedAt và chuyển thành dd/MM/yyyy
-    const formattedDate = new Date(booking.updatedAt)
-      .toISOString()
-      .slice(0, 10) // yyyy-MM-dd
-      .split('-')
-      .reverse()
-      .join('/'); // Chuyển thành dd/MM/yyyy
-
-    if (!groupedByDay[formattedDate]) {
-      groupedByDay[formattedDate] = [];
-    }
-    groupedByDay[formattedDate].push(room);
-  }
-});
+    orderRooms.forEach((order) => {
+      const booking = order.bookingId;
+      if (booking && booking.updatedAt) {
+        // Lấy ngày từ updatedAt và chuyển thành dd/MM/yyyy
+        const formattedDate = new Date(booking.updatedAt)
+          .toISOString()
+          .slice(0, 10) // yyyy-MM-dd
+          .split('-')
+          .reverse()
+          .join('/'); // Chuyển thành dd/MM/yyyy
+    
+        if (!groupedByDay[formattedDate]) {
+          groupedByDay[formattedDate] = [];
+        }
+        groupedByDay[formattedDate].push(order);
+      }
+    });
 
     // ====== Hàm áp dụng đường viền ======
     const applyBorderToRow = (row) => {
@@ -202,13 +175,12 @@ export const getAllOrderRoomsByExcel = async (req, res) => {
       let totalPrice = 0;
       let totalQuantityString = 0;
 
-      dayData.forEach((room, index) => {
-        const roomCategory = room.roomCategoryId;
-        const booking = room.bookingId;
+      dayData.forEach((order, index) => {
+        const roomCategory = order.roomCategoryId;
+        const booking = order.bookingId;
 
-        //const roomFee = roomCategory?.price || 0;
         const roomFee = booking?.price || 0;
-        const quantity = 1; // Giả sử mỗi phòng là 1 đơn vị
+        const quantity = order?.quantity || 1; // Giả sử mỗi phòng là 1 đơn vị
         const itemTotal = roomFee * quantity;
 
         totalRoomFee += itemTotal;
@@ -229,8 +201,6 @@ export const getAllOrderRoomsByExcel = async (req, res) => {
         ]);
         applyBorderToRow(dataRow);
       });
-
-      //console.log('totalQuantityString: ', totalQuantityString);
 
       // ====== Dòng "Tổng" ======
       const totalRow = sheet.addRow([
@@ -316,6 +286,7 @@ export const getAllOrderRoomsByExcel = async (req, res) => {
 
     // ====== Lưu file ======
     const filePath = path.join(__dirname, '../exports', `Bao-cao-doanh-thu-Thang-${month}-${year}.xlsx`);
+
     res.setHeader(
       'Content-Type',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -329,7 +300,7 @@ export const getAllOrderRoomsByExcel = async (req, res) => {
     res.end(); // Kết thúc response
     console.log('File Excel đã được gửi tới client.');
     console.log('File Excel đã được tạo:', filePath);
-    //return res.status(200).json({ message: 'Xuất file thành công', filePath });
+
   } catch (error) {
     console.error('Lỗi khi tạo file Excel:', error);
     if (!res.headersSent) {
@@ -341,46 +312,53 @@ export const getAllOrderRoomsByExcel = async (req, res) => {
 // export const getAllOrderRoomsByExcel = async (req, res) => {
 //   try {
 //     console.log('Bắt đầu xuất file doanh thu');
-    
-//     // Lấy query params
-//     const { locationId, month, year, status } = req.query;
-
-//     // Tạo bộ lọc
-//     const filter = {};
-//     if (locationId) filter['roomCategoryId.locationId'] = locationId;
-//     if (month && year) {
-//       filter['bookingId.checkin'] = {
-//         $gte: new Date(year, month - 1, 1),
-//         $lte: new Date(year, month, 0),
-//       };
-//     }
-//     if (status) filter['bookingId.status'] = status;
-
 //     // Lấy dữ liệu từ DB
-//     const rooms = await Room.find(filter)
-//       .populate('roomCategoryId') // Lấy thông tin loại phòng
-//       .populate('bookingId'); // Lấy thông tin booking
+//     const rooms = await Room.find()
+//       .populate('roomCategoryId') // Lấy thông tin loại phòng (RoomCategories)
+//       .populate('bookingId'); // Lấy thông tin booking (Bookings)
 
 //     if (!rooms || rooms.length === 0) {
 //       return res.status(404).json({ message: 'Không tìm thấy dữ liệu' });
 //     }
 
+//     const currentDate = new Date();
+//     const month = currentDate.getMonth() + 1; // Tháng hiện tại (1-12)
+//     const year = currentDate.getFullYear(); // Năm hiện tại
+//     const daysInMonth = new Date(year, month, 0).getDate(); // Số ngày trong tháng
 //     const workbook = new ExcelJS.Workbook();
 
 //     // ====== Nhóm dữ liệu theo ngày ======
-//     const groupedByDay = {};
+//     // const groupedByDay = {};
+//     // rooms.forEach((room) => {
+//     //   const booking = room.bookingId;
+//     //   if (booking && booking.checkin) {
+//     //     const orderDate = new Date(booking.checkin);
+//     //     const day = orderDate.getDate();
+
+//     //     if (!groupedByDay[day]) groupedByDay[day] = [];
+//     //     groupedByDay[day].push(room);
+//     //   }
+//     // });
+
 //     rooms.forEach((room) => {
-//       const booking = room.bookingId;
-//       if (booking && booking.checkin) {
-//         const orderDate = new Date(booking.checkin);
-//         const day = orderDate.getDate();
+//   const booking = room.bookingId;
+//   if (booking && booking.updatedAt) {
+//     // Lấy ngày từ updatedAt và chuyển thành dd/MM/yyyy
+//     const formattedDate = new Date(booking.updatedAt)
+//       .toISOString()
+//       .slice(0, 10) // yyyy-MM-dd
+//       .split('-')
+//       .reverse()
+//       .join('/'); // Chuyển thành dd/MM/yyyy
 
-//         if (!groupedByDay[day]) groupedByDay[day] = [];
-//         groupedByDay[day].push(room);
-//       }
-//     });
+//     if (!groupedByDay[formattedDate]) {
+//       groupedByDay[formattedDate] = [];
+//     }
+//     groupedByDay[formattedDate].push(room);
+//   }
+// });
 
-//     // ====== Tạo sheet chi tiết từng ngày ======
+//     // ====== Hàm áp dụng đường viền ======
 //     const applyBorderToRow = (row) => {
 //       row.eachCell({ includeEmpty: true }, (cell) => {
 //         cell.border = {
@@ -392,50 +370,161 @@ export const getAllOrderRoomsByExcel = async (req, res) => {
 //       });
 //     };
 
-//     const currentMonth = parseInt(month, 10);
-//     const currentYear = parseInt(year, 10);
-//     const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
-
+//     // ====== Tạo sheet chi tiết từng ngày ======
 //     for (let day = 1; day <= daysInMonth; day++) {
 //       const sheet = workbook.addWorksheet(`Ngày ${day}.${month}`);
-//       sheet.addRow(['STT', 'Phòng', 'Đơn giá', 'Số lượng', 'Tổng tiền']);
-//       const headerRow = sheet.getRow(1);
-//       headerRow.font = { bold: true };
+
+//       // ====== Tiêu đề ======
+//       sheet.mergeCells('A1:I1');
+//       sheet.getCell('A1').value = `BẢNG KÊ DOANH THU`;
+//       sheet.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' };
+//       sheet.getCell('A1').font = { bold: true, size: 16 };
+
+//       sheet.mergeCells('A2:I2');
+//       sheet.getCell('A2').value = `NGÀY ${day}/${month}/${year}`;
+//       sheet.getCell('A2').alignment = { horizontal: 'center', vertical: 'middle' };
+//       sheet.getCell('A2').font = { bold: true, size: 12 };
+
+//       // ====== Header ======
+//       sheet.addRow([
+//         'STT',
+//         'Phòng',
+//         'Đơn giá',
+//         'Số lượng',
+//         'Tiền phòng',
+//         'Thêm h+ Nghỉ h',
+//         'Dịch Vụ',
+//         'Nợ',
+//         'Đã TT',
+//         'Lễ Tân thu',
+//         'Ghi chú',
+//       ]);
+//       const headerRow = sheet.getRow(3);
+//       headerRow.font = { bold: true, size: 12 };
+//       headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
 //       applyBorderToRow(headerRow);
 
+//       // ====== Dữ liệu ======
 //       const dayData = groupedByDay[day] || [];
+//       let totalRoomFee = 0;
+//       let totalQuantity = 0;
+//       let totalPrice = 0;
+//       let totalQuantityString = 0;
+
 //       dayData.forEach((room, index) => {
 //         const roomCategory = room.roomCategoryId;
 //         const booking = room.bookingId;
 
-//         sheet.addRow([
+//         //const roomFee = roomCategory?.price || 0;
+//         const roomFee = booking?.price || 0;
+//         const quantity = 1; // Giả sử mỗi phòng là 1 đơn vị
+//         const itemTotal = roomFee * quantity;
+
+//         totalRoomFee += itemTotal;
+//         totalQuantity += quantity;
+
+//         const dataRow = sheet.addRow([
 //           index + 1,
 //           roomCategory?.name || 'N/A',
-//           roomCategory?.price || 0,
-//           1, // Số lượng mặc định là 1
-//           roomCategory?.price || 0,
+//           roomFee.toLocaleString(),
+//           quantity,
+//           itemTotal.toLocaleString(),
+//           '',
+//           '',
+//           '',
+//           '',
+//           '',
+//           '',
 //         ]);
+//         applyBorderToRow(dataRow);
+//       });
+
+//       //console.log('totalQuantityString: ', totalQuantityString);
+
+//       // ====== Dòng "Tổng" ======
+//       const totalRow = sheet.addRow([
+//         'Tổng:',
+//         '',
+//         '',
+//         '',
+//         totalRoomFee.toLocaleString(),
+//         '',
+//         '',
+//         '',
+//         '',
+//       ]);
+//       totalRow.font = { bold: true, size: 12 };
+//       totalRow.alignment = { horizontal: 'center', vertical: 'middle' };
+//       applyBorderToRow(totalRow);
+
+//       // ====== Dòng "Tổng doanh thu" ======
+//       const revenueRow = sheet.addRow([
+//         'Tổng doanh thu:',
+//         { formula: 'SUM(E:E, F:F, G:G)' },
+//       ]);
+//       revenueRow.font = { bold: true, size: 12 };
+//       applyBorderToRow(revenueRow);
+
+//       // ====== Dòng "Số phòng" và "Số đoàn" ======
+//       const statsRow = sheet.addRow(['Số phòng:', totalQuantity.toLocaleString()]);
+//       const groupStatsRow = sheet.addRow(['Số đoàn:', '']);
+//       statsRow.font = groupStatsRow.font = { bold: true, size: 12 };
+//       applyBorderToRow(statsRow);
+//       applyBorderToRow(groupStatsRow);
+
+//       // ====== Định dạng chiều rộng và chiều cao ======
+//       sheet.columns.forEach((column) => {
+//         column.width = 20;
+//       });
+//       sheet.eachRow((row) => {
+//         row.height = 25;
 //       });
 //     }
 
-//     // ====== Tạo sheet tổng ======
+//     // ====== Tạo sheet tổng doanh thu ======
 //     const summarySheet = workbook.addWorksheet('Tổng Doanh Thu');
-//     summarySheet.addRow(['STT', 'Ngày', 'Số lượng phòng', 'Tổng tiền']);
-//     const summaryHeaderRow = summarySheet.getRow(1);
-//     summaryHeaderRow.font = { bold: true };
+//     summarySheet.mergeCells('A1:F1');
+//     summarySheet.getCell('A1').value = `BẢNG KÊ DOANH THU`;
+//     summarySheet.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' };
+//     summarySheet.getCell('A1').font = { bold: true, size: 16 };
+
+//     summarySheet.mergeCells('A2:F2');
+//     summarySheet.getCell('A2').value = `THÁNG ${month}/${year}`;
+//     summarySheet.getCell('A2').alignment = { horizontal: 'center', vertical: 'middle' };
+//     summarySheet.getCell('A2').font = { bold: true, size: 12 };
+
+//     summarySheet.addRow(['STT', 'Ngày', 'Số lượng phòng', 'Tổng nợ', 'Đã thanh toán', 'Tổng doanh thu']);
+//     const summaryHeaderRow = summarySheet.getRow(3);
+//     summaryHeaderRow.font = { bold: true, size: 12 };
 //     applyBorderToRow(summaryHeaderRow);
 
 //     Object.keys(groupedByDay).forEach((day, index) => {
 //       const dayData = groupedByDay[day] || [];
-//       const totalRevenue = dayData.reduce(
-//         (sum, room) => sum + (room.roomCategoryId?.price || 0),
-//         0
-//       );
+//       const dayRooms = dayData.length;
+//       const dayDebt = dayData.reduce((sum, room) => sum + (room.bookingId?.price - room.bookingId?.payment || 0), 0);
+//       const dayPaid = dayData.reduce((sum, room) => sum + (room.bookingId?.payment || 0), 0);
+//       const dayRevenue = dayData.reduce((sum, room) => sum + (room.roomCategoryId?.price || 0), 0);
 
-//       summarySheet.addRow([index + 1, `${day}/${month}/${year}`, dayData.length, totalRevenue]);
+//       const summaryRow = summarySheet.addRow([
+//         index + 1,
+//         `${day}/${month}/${year}`,
+//         dayRooms,
+//         dayDebt,
+//         dayPaid,
+//         dayRevenue,
+//       ]);
+//       applyBorderToRow(summaryRow);
 //     });
 
-//     // ====== Ghi file Excel ======
+//     summarySheet.columns.forEach((column) => {
+//       column.width = 20;
+//     });
+//     summarySheet.eachRow((row) => {
+//       row.height = 25;
+//     });
+
+//     // ====== Lưu file ======
+//     const filePath = path.join(__dirname, '../exports', `Bao-cao-doanh-thu-Thang-${month}-${year}.xlsx`);
 //     res.setHeader(
 //       'Content-Type',
 //       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -445,9 +534,11 @@ export const getAllOrderRoomsByExcel = async (req, res) => {
 //       `attachment; filename=Bao-cao-doanh-thu-Thang-${month}-${year}.xlsx`
 //     );
 
-//     await workbook.xlsx.write(res);
-//     res.end();
+//     await workbook.xlsx.write(res); // Ghi file trực tiếp vào response
+//     res.end(); // Kết thúc response
 //     console.log('File Excel đã được gửi tới client.');
+//     console.log('File Excel đã được tạo:', filePath);
+//     //return res.status(200).json({ message: 'Xuất file thành công', filePath });
 //   } catch (error) {
 //     console.error('Lỗi khi tạo file Excel:', error);
 //     if (!res.headersSent) {
@@ -455,7 +546,6 @@ export const getAllOrderRoomsByExcel = async (req, res) => {
 //     }
 //   }
 // };
-
 
 
 
